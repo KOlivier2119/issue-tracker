@@ -10,4 +10,4 @@ const NewIssuePage = () => {
   );
 };
 
-export default NewIssuePage;
+export default NewIssuePage; 
