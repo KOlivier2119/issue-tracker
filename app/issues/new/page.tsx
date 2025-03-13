@@ -11,10 +11,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createIssueSchema } from '@/app/validationSchemas';
 import { z } from 'zod';
 import ErrorMessage from '@/app/components/ErrorMessage';
+import Spinner from '@/app/components/Spinner';
 
 type IssueForm = z.infer<typeof createIssueSchema>
 
 const NewIssuePage = () => {
+    const [isSubmitting, setSubmitting] = useState(false);
     const router = useRouter();
     const { control, handleSubmit, formState: { errors } } = useForm<IssueForm>({
         resolver: zodResolver(createIssueSchema)
@@ -23,11 +25,13 @@ const NewIssuePage = () => {
 
     const onSubmit = async (data: IssueForm) => {
         try {
+            setSubmitting(true);
             console.log('Submitting data:', data); // Debug log
             const response = await axios.post('/api/issues', data);
             console.log('Success response:', response); // Debug log
             router.push('/issues');
         } catch (err) {
+            setSubmitting(false);
             console.log('Caught error:', err); // Debug log
             if (axios.isAxiosError(err)) {
                 const errorMessage = err.response?.data?.message ||
@@ -44,6 +48,7 @@ const NewIssuePage = () => {
 
     console.log('Current error state:', error); // Debug log to check state
 
+    
     return (
         <div className='max-w-xl'>
             {error && (
@@ -77,8 +82,9 @@ const NewIssuePage = () => {
                     
                 />
                 <ErrorMessage>{errors.description?.message}</ErrorMessage>
-                <Button type="submit" className='cursor-pointer'>
+                <Button type="submit" className='cursor-pointer' disabled={isSubmitting}>
                     Submit New Issue
+                    {isSubmitting && <Spinner />}
                 </Button>
             </form>
         </div>
