@@ -1,46 +1,86 @@
 'use client';
 
-import { Button, TextField } from '@radix-ui/themes';
+import { Button, Callout, TextField, Text } from '@radix-ui/themes';
 import SimpleMDE from 'react-simplemde-editor';
 import 'easymde/dist/easymde.min.css';
 import { useForm, Controller } from 'react-hook-form';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { createIssueSchema } from '@/app/validationSchemas';
+import { z } from 'zod';
 
-interface IssueForm {
-    title: string;
-    description: string;
-}
+type IssueForm = z.infer<typeof createIssueSchema>
 
 const NewIssuePage = () => {
     const router = useRouter();
-    const { control, handleSubmit } = useForm<IssueForm>();
+    const { control, handleSubmit, formState: { errors } } = useForm<IssueForm>({
+        resolver: zodResolver(createIssueSchema)
+    });
+    const [error, setError] = useState<string>(''); // Explicitly type as string
+
+    const onSubmit = async (data: IssueForm) => {
+        try {
+            console.log('Submitting data:', data); // Debug log
+            const response = await axios.post('/api/issues', data);
+            console.log('Success response:', response); // Debug log
+            router.push('/issues');
+        } catch (err) {
+            console.log('Caught error:', err); // Debug log
+            if (axios.isAxiosError(err)) {
+                const errorMessage = err.response?.data?.message ||
+                    err.message ||
+                    'Failed to create issue';
+                setError(errorMessage);
+                console.log('Set error to:', errorMessage); // Debug log
+            } else {
+                setError('An unexpected error occurred');
+                console.log('Set unexpected error'); // Debug log
+            }
+        }
+    };
+
+    console.log('Current error state:', error); // Debug log to check state
 
     return (
-        <form className="max-w-xl space-y-3" onSubmit={handleSubmit(async (data) => {
-            await axios.post('/api/issues', data);
-            router.push('/issues')
-        })}>
-            {/* Use Controller for TextField */}
-            <Controller
-                name="title"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                    <TextField.Root radius="large" {...field} placeholder="Title" />
-                )}
-            />
-
-            {/* Properly handle SimpleMDE */}
-            <Controller
-                name="description"
-                control={control}
-                defaultValue=""
-                render={({ field }) => <SimpleMDE placeholder="Description" {...field} />}
-            />
-
-            <Button type="submit">Submit New Issue</Button>
-        </form>
+        <div className='max-w-xl'>
+            {error && (
+                <Callout.Root color="red" className='mb-5'>
+                    <Callout.Text>{error}</Callout.Text>
+                </Callout.Root>
+            )}
+            <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
+                <Controller
+                    name="title"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                        <TextField.Root
+                            radius="large"
+                            {...field}
+                            placeholder="Title"
+                        />
+                    )}
+                />
+                {errors.title && <p><Text color="red">{errors.title.message}</Text></p>}
+                <Controller
+                    name="description"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                        <SimpleMDE
+                            placeholder="Description"
+                            {...field}
+                        />
+                    )}
+                />
+                {errors.description && <p><Text color='red'>{errors.description.message}</Text></p>}
+                <Button type="submit" className='cursor-pointer'>
+                    Submit New Issue
+                </Button>
+            </form>
+        </div>
     );
 };
 
