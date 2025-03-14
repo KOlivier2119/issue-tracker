@@ -1,6 +1,8 @@
-import { Button } from '@radix-ui/themes'
-import React from 'react'
-import { Link } from 'react-router-dom'
+"use client";
+
+import { Button } from "@radix-ui/themes";
+import Link from "next/link"; // Use Next.js Link
+import React from "react";
 
 const IssueActions = () => {
     return (
@@ -9,7 +11,7 @@ const IssueActions = () => {
                 <Link href="/issues/new">New Issue</Link>
             </Button>
         </div>
-    )
-}
+    );
+};
 
-export default IssueActions
+export default IssueActions;
